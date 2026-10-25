@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: vidya_owner
+          POSTGRES_PASSWORD: vidya_owner_dev
+          POSTGRES_DB: vidyatrack
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U vidya_owner" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create API role and test database (same as infra/postgres/init.sql)
+        env:
+          PGPASSWORD: vidya_owner_dev
+        run: psql -h localhost -p 5433 -U vidya_owner -d vidyatrack -f ../infra/postgres/init.sql
+      - name: System libraries for WeasyPrint (report card PDFs)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.22"
+      - run: uv sync --frozen --python 3.12 --extra pdf
+      - name: Lint
+        run: uv run ruff check app tests alembic && uv run ruff format --check app tests alembic
+      - name: Type check
+        run: uv run mypy app
+      - name: Tests (tenant isolation, IDOR, permissions, business rules)
+        run: uv run pytest -q -rs
+      - name: OpenAPI spec is committed and current
+        run: |
+          uv run python -m app.export_openapi ../web/openapi.json
+          git diff --exit-code ../web/openapi.json
+
+  web:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Generated API client matches openapi.json
+        run: npm run gen:api && git diff --exit-code src/lib/api-types.ts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+
+  mobile:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.7"
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test

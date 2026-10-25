@@ -1,0 +1,46 @@
+# Local development stack. Ports are shifted (5433, 6380) so they don't clash
+# with a Postgres/Redis already installed on the developer machine.
+# File storage uses the local disk in dev (STORAGE_BACKEND=local) and S3
+# (Mumbai) in staging/production.
+# Credentials below are for LOCAL DEV ONLY; production uses a secrets manager.
+name: vidyatrack
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vidya_owner          # owns the schema; runs migrations
+      POSTGRES_PASSWORD: vidya_owner_dev
+      POSTGRES_DB: vidyatrack
+    ports: ["5433:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vidya_owner -d vidyatrack"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6380:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  # Optional: run the API in a container (needed for WeasyPrint PDFs on Windows).
+  #   docker compose --profile app up --build
+  api:
+    profiles: ["app"]
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    env_file: ../backend/.env.docker
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  pgdata:

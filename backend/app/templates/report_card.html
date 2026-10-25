@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Report card</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  body { font-family: "DejaVu Sans", Arial, sans-serif; color: #1a1a1a; font-size: 11pt; }
+  header { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #1F4E79; padding-bottom: 10px; }
+  header img { height: 64px; }
+  .school h1 { font-size: 18pt; margin: 0; color: #1F4E79; }
+  .school p { margin: 2px 0 0; font-size: 9pt; color: #444; }
+  h2 { text-align: center; font-size: 13pt; margin: 14px 0 8px; letter-spacing: .5px; }
+  table { width: 100%; border-collapse: collapse; }
+  .info td { padding: 3px 4px; font-size: 10pt; }
+  .info td.k { color: #555; width: 22%; }
+  .marks { margin-top: 12px; }
+  .marks th { background: #1F4E79; color: #fff; padding: 6px; font-size: 10pt; text-align: left; }
+  .marks td { border-bottom: 1px solid #ddd; padding: 6px; font-size: 10pt; }
+  .marks td.n, .marks th.n { text-align: right; }
+  .marks tr.total td { font-weight: bold; border-top: 2px solid #1F4E79; }
+  .fail { color: #b00020; }
+  .summary { margin-top: 14px; display: flex; gap: 10px; }
+  .box { flex: 1; border: 1px solid #ccd; border-radius: 6px; padding: 8px; text-align: center; }
+  .box .v { font-size: 15pt; font-weight: bold; color: #1F4E79; }
+  .box .l { font-size: 8.5pt; color: #555; }
+  .sign { margin-top: 60px; display: flex; justify-content: space-between; font-size: 10pt; }
+  .sign div { border-top: 1px solid #333; width: 30%; text-align: center; padding-top: 4px; }
+  footer { margin-top: 24px; font-size: 8pt; color: #777; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  {% if logo_data_uri %}<img src="{{ logo_data_uri }}" alt="">{% endif %}
+  <div class="school">
+    <h1>{{ school.name }}</h1>
+    <p>{{ [school.address, school.city, school.state, school.pincode] | select | join(", ") }}</p>
+    {% if school.phone or school.email %}<p>{{ [school.phone, school.email] | select | join(" · ") }}</p>{% endif %}
+  </div>
+</header>
+
+<h2>REPORT CARD · {{ result.exam_name | upper }} · {{ year_name }}</h2>
+
+<table class="info">
+  <tr><td class="k">Student</td><td><b>{{ result.student_name }}</b></td>
+      <td class="k">Admission no.</td><td>{{ student.admission_no }}</td></tr>
+  <tr><td class="k">Class / Section</td><td>{{ section_name }}</td>
+      <td class="k">Roll no.</td><td>{{ roll_no or "-" }}</td></tr>
+  {% if student.date_of_birth %}<tr><td class="k">Date of birth</td><td>{{ student.date_of_birth.strftime("%d %b %Y") }}</td><td></td><td></td></tr>{% endif %}
+</table>
+
+<table class="marks">
+  <thead><tr><th>Subject</th><th class="n">Max</th><th class="n">Pass</th><th class="n">Obtained</th><th class="n">Grade</th></tr></thead>
+  <tbody>
+  {% for s in result.subjects %}
+    <tr>
+      <td>{{ s.subject_name }}</td>
+      <td class="n">{{ s.max_marks | num }}</td>
+      <td class="n">{{ s.pass_marks | num }}</td>
+      <td class="n {% if s.passed == false %}fail{% endif %}">
+        {% if s.status.value == "ABSENT" %}AB{% elif s.status.value == "EXEMPT" %}EX{% else %}{{ s.marks | num }}{% endif %}
+      </td>
+      <td class="n">{{ s.grade or "-" }}</td>
+    </tr>
+  {% endfor %}
+    <tr class="total"><td>Total</td><td class="n">{{ result.total_max | num }}</td><td></td>
+      <td class="n">{{ result.total_obtained | num }}</td><td class="n">{{ result.grade or "-" }}</td></tr>
+  </tbody>
+</table>
+
+<div class="summary">
+  <div class="box"><div class="v">{{ result.percentage | num }}%</div><div class="l">Percentage</div></div>
+  <div class="box"><div class="v">{{ result.grade or "-" }}</div><div class="l">Grade</div></div>
+  {% if result.rank is not none %}<div class="box"><div class="v">{{ result.rank }} / {{ result.section_size }}</div><div class="l">Rank in section</div></div>{% endif %}
+  <div class="box"><div class="v">{{ "Pass" if result.passed else "Needs improvement" }}</div><div class="l">Result</div></div>
+</div>
+
+<div class="sign"><div>Class teacher</div><div>Parent / Guardian</div><div>Principal</div></div>
+<footer>Generated on {{ generated_on }} · AB = absent, EX = exempted</footer>
+</body>
+</html>

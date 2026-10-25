@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* Design tokens. High contrast and a slightly larger base size for parents
+   who are not used to apps (MVP_SPEC §9 Accessibility). */
+:root {
+  --background: #f6f7f9;
+  --foreground: #14181f;
+  --card: #ffffff;
+  --card-foreground: #14181f;
+  --muted: #eef0f3;
+  --muted-foreground: #586172;
+  --border: #dde1e7;
+  --input: #c9ced6;
+  --ring: #1f4e79;
+  --primary: #1f4e79;
+  --primary-foreground: #ffffff;
+  --secondary: #e6edf5;
+  --secondary-foreground: #1f3550;
+  --destructive: #b42318;
+  --success: #067647;
+  --warning: #b54708;
+  --warning-foreground: #7a2e0e;
+  /* Categorical series, fixed order (validated: dataviz validate_palette.js, light). */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  /* Sequential (magnitude) single hue */
+  --chart-seq: #2a78d6;
+  --chart-grid: #e4e7ec;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #0d1117;
+    --foreground: #e6e9ef;
+    --card: #151b23;
+    --card-foreground: #e6e9ef;
+    --muted: #1d2530;
+    --muted-foreground: #9aa4b2;
+    --border: #2a3441;
+    --input: #3a4655;
+    --ring: #7cb4f0;
+    --primary: #7cb4f0;
+    --primary-foreground: #0d1117;
+    --secondary: #1f2a38;
+    --secondary-foreground: #cfe0f5;
+    --destructive: #f97066;
+    --success: #47cd89;
+    --warning: #fdb022;
+    --warning-foreground: #fec84b;
+    --chart-1: #3987e5;
+    --chart-2: #d95926;
+    --chart-3: #199e70;
+    --chart-4: #c98500;
+    --chart-5: #d55181;
+    --chart-6: #008300;
+    --chart-seq: #3987e5;
+    --chart-grid: #2a3441;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial,
+    sans-serif;
+}
+
+html {
+  font-size: 16.5px;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Marks grid: hide number spinners so typing is fast. */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
