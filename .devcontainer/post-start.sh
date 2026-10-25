@@ -14,11 +14,13 @@ until pg_isready -h postgres -U vidya_owner >/dev/null 2>&1; do sleep 1; done
 
 pkill -f "uvicorn app.main:app" 2>/dev/null || true
 pkill -f "next start" 2>/dev/null || true
+sleep 1
 
-(cd backend && nohup $UV run uvicorn app.main:app --host 0.0.0.0 --port 8000 > ../.devcontainer/logs/api.log 2>&1 &)
+# setsid + nohup: fully detach so the servers survive when this lifecycle script exits.
+(cd backend && setsid nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > ../.devcontainer/logs/api.log 2>&1 < /dev/null &)
 # Start the web app only once the API answers, so the first page load never fails.
 for _ in $(seq 60); do curl -sf http://localhost:8000/health >/dev/null && break; sleep 1; done
-(cd web && nohup npm start -- -p 3000 > ../.devcontainer/logs/web.log 2>&1 &)
+(cd web && setsid nohup npm start -- -p 3000 > ../.devcontainer/logs/web.log 2>&1 < /dev/null &)
 
 echo "VidyaTrack is starting: open the 'Ports' tab and click the globe icon next to port 3000."
 echo "Demo logins: principal 9000000002, OTP 123456 (see README)."
