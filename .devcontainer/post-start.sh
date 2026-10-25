@@ -3,7 +3,11 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p .devcontainer/logs
-UV="python -m uv"
+# Always use the image's system Python, even if a virtualenv is active in this shell.
+unset VIRTUAL_ENV
+SYS_PY=/usr/local/bin/python3
+[ -x "$SYS_PY" ] || SYS_PY=/usr/bin/python3
+UV="$SYS_PY -m uv"
 
 until pg_isready -h postgres -U vidya_owner >/dev/null 2>&1; do sleep 1; done
 (cd backend && $UV run alembic upgrade head >/dev/null)

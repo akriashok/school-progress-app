@@ -10,13 +10,17 @@ sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core postgresql-client >/dev/null
 
 echo "==> Backend"
-pip install --quiet --user uv
-UV="python -m uv"   # works even when ~/.local/bin is not on PATH
+# Always use the image's system Python, even if a virtualenv is active in this shell.
+unset VIRTUAL_ENV
+SYS_PY=/usr/local/bin/python3
+[ -x "$SYS_PY" ] || SYS_PY=/usr/bin/python3
+UV="$SYS_PY -m uv"
+$SYS_PY -m pip install --quiet --user --disable-pip-version-check uv
 cd backend
 if [ ! -f .env ]; then
   cp .env.example .env
   # Fresh random secret per codespace; DB/Redis URLs come from the container environment.
-  sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$(python -c 'import secrets;print(secrets.token_urlsafe(48))')|" .env
+  sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$($SYS_PY -c 'import secrets;print(secrets.token_urlsafe(48))')|" .env
   sed -i '/^DATABASE_URL=/d;/^MIGRATION_DATABASE_URL=/d;/^REDIS_URL=/d' .env
 fi
 $UV sync --python 3.12 --extra pdf
