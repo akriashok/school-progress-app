@@ -24,6 +24,14 @@ v1 is built: milestones 0–5 in full, milestone 6 except push registration on t
 | [docs/BUILD_PLAN.md](docs/BUILD_PLAN.md) | Milestones and the v2 backlog |
 | [AGENTS.md](AGENTS.md) | Rules for coding agents |
 
+## Run it in GitHub Codespaces (demo link)
+
+1. On the repository page click **Code → Codespaces → Create codespace on main**.
+2. Wait 5–8 minutes the first time. Setup installs everything, creates the database, loads the demo school and starts the app.
+3. Open the **Ports** tab. Port **3000** is the web app. To share it, right-click it, choose **Port visibility → Public**, and copy the `https://…-3000.app.github.dev` link.
+
+Logs are in `.devcontainer/logs/`. The codespace sleeps after about 30 minutes of inactivity; reopening it restarts the app on the same link. **Demo data only:** Codespaces run outside India.
+
 ## Run it locally
 
 Prerequisites: Docker Desktop, [uv](https://docs.astral.sh/uv/), Node 22+. Flutter is optional (it can also run in Docker, see below).

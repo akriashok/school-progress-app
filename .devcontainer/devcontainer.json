@@ -1,0 +1,23 @@
+{
+  // GitHub Codespaces / VS Code dev container: Postgres + Redis + API + web, with demo data.
+  // DEMO ONLY: codespaces run outside India, so never load real student data here.
+  "name": "VidyaTrack demo",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
+  "forwardPorts": [3000, 8000],
+  "portsAttributes": {
+    "3000": { "label": "VidyaTrack web", "onAutoForward": "openBrowser" },
+    "8000": { "label": "API (docs at /docs)", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "customizations": {
+    "codespaces": { "openFiles": ["README.md"] },
+    "vscode": { "extensions": ["ms-python.python", "charliermarsh.ruff", "dbaeumer.vscode-eslint"] }
+  },
+  "hostRequirements": { "cpus": 2, "memory": "4gb" }
+}
