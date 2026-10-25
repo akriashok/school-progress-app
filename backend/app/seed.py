@@ -11,6 +11,7 @@ import sys
 import uuid
 from datetime import date
 from decimal import Decimal
+from pathlib import Path
 
 from sqlalchemy import create_engine, select, text
 
@@ -27,6 +28,7 @@ from app.models import (
     SchoolClass,
     Section,
     TeacherAssignment,
+    UserRole,
 )
 from app.schemas.exams import AutoExamSubjectsIn, ExamIn
 from app.schemas.setup import (
@@ -40,7 +42,7 @@ from app.schemas.setup import (
     SubjectIn,
     TeacherIn,
 )
-from app.schemas.website import Admissions, Leader, StatItem
+from app.schemas.website import Admissions, GalleryItem, Leader, StatItem
 from app.services import academics, exams, marks, people, schools, website
 from app.services.users import ensure_role, get_or_create_user
 
@@ -349,11 +351,24 @@ def seed() -> None:
         db.close()
 
 
+ASSETS = Path(__file__).parent / "demo_assets"
+
+
+def _img(ctx: Ctx, name: str) -> str:
+    return website.upload_image(ctx, (ASSETS / f"{name}.jpg").read_bytes(), "image/jpeg")
+
+
 def seed_website(ctx: Ctx) -> None:
-    """Demo text for the public school website (photos are uploaded by the school later)."""
+    """Demo content + illustrations for the public school website (fictional school)."""
     content = website.default_content(schools.get_own_school(ctx))
     content.tagline = "CBSE · Nursery to Class 10 · Hyderabad"
     content.hero_title = "Where every child learns, plays and shines"
+    content.hero_image = _img(ctx, "hero")
+    content.about_image = _img(ctx, "about")
+    for card, name in zip(content.highlights, ("academics", "activities", "values"), strict=False):
+        card.image = _img(ctx, name)
+    for fac, name in zip(content.facilities, ("classroom", "library", "playground", "bus"), strict=False):
+        fac.image = _img(ctx, name)
     content.stats = [
         StatItem(value="120+", label="Students"),
         StatItem(value="6", label="Sections"),
@@ -366,11 +381,23 @@ def seed_website(ctx: Ctx) -> None:
         "Safe campus with CCTV",
         "Regular parent updates on the VidyaTrack app",
     ]
+    content.gallery = [
+        GalleryItem(image=_img(ctx, name), caption=caption)
+        for name, caption in (
+            ("sports", "Sports day"),
+            ("art", "Art class"),
+            ("science", "Science lab"),
+            ("music", "Music room"),
+            ("annual", "Annual day"),
+            ("garden", "School garden"),
+        )
+    ]
     content.leaders = [
         Leader(
             name="Dr. Meera Krishnan",
             role="Principal",
             bio="25 years in school education; believes every child can excel.",
+            photo=_img(ctx, "principal"),
         )
     ]
     content.admissions = Admissions(
@@ -383,12 +410,41 @@ def seed_website(ctx: Ctx) -> None:
     website.save_content(ctx, content)
 
 
+def refresh_demo_website() -> None:
+    """Re-apply the demo website (texts + illustrations) to an existing DEMO01 school."""
+    db = SessionLocal()
+    try:
+        school = db.scalar(select(School).where(School.code == "DEMO01"))
+        if school is None:
+            sys.exit("Demo school not found; run `python -m app.seed` first")
+        set_tenant(db, school.id)
+        role = db.scalar(
+            select(UserRole).where(UserRole.school_id == school.id, UserRole.role == RoleType.SCHOOL_ADMIN)
+        )
+        assert role is not None
+        ctx = Ctx(
+            db=db,
+            user=CurrentUser(
+                user_id=role.user_id, user_role_id=role.id, role=RoleType.SCHOOL_ADMIN, school_id=school.id
+            ),
+        )
+        seed_website(ctx)
+        db.commit()
+        print("Demo school website refreshed.")
+    finally:
+        db.close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset", action="store_true", help="truncate all tables first (dev only)")
+    parser.add_argument("--website", action="store_true", help="only refresh the demo school website")
     args = parser.parse_args()
     if not get_settings().is_dev:
         sys.exit("Seeding is only allowed in local/test environments")
+    if args.website:
+        refresh_demo_website()
+        return
     if args.reset:
         reset_database()
     seed()

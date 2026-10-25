@@ -32,10 +32,10 @@ export function Gallery({ items }: { items: Item[] }) {
             key={i}
             type="button"
             onClick={() => setIndex(i)}
-            className={`group relative overflow-hidden rounded-2xl shadow-md ${i % 5 === 0 ? "md:row-span-2" : ""}`}
+            className="group relative aspect-[3/2] overflow-hidden rounded-2xl shadow-md"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={it.src} alt={it.caption || ""} loading="lazy" className="h-full min-h-40 w-full object-cover transition duration-300 group-hover:scale-105" />
+            <img src={it.src} alt={it.caption || ""} loading="lazy" className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
             {it.caption ? (
               <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-3 text-left text-sm font-medium text-white">
                 {it.caption}
