@@ -14,6 +14,8 @@ until pg_isready -h postgres -U vidya_owner >/dev/null 2>&1; do sleep 1; done
 
 # Free the ports whatever process holds them (an old Next.js runs as "next-server", not "next start").
 pkill -f "uvicorn app.main:app" 2>/dev/null || true
+pkill -f "next-server" 2>/dev/null || true
+pkill -f "next start" 2>/dev/null || true
 fuser -k 3000/tcp 8000/tcp >/dev/null 2>&1 || true
 sleep 2
 
