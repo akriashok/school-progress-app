@@ -12,9 +12,10 @@ UV="$SYS_PY -m uv"
 until pg_isready -h postgres -U vidya_owner >/dev/null 2>&1; do sleep 1; done
 (cd backend && $UV run alembic upgrade head >/dev/null)
 
+# Free the ports whatever process holds them (an old Next.js runs as "next-server", not "next start").
 pkill -f "uvicorn app.main:app" 2>/dev/null || true
-pkill -f "next start" 2>/dev/null || true
-sleep 1
+fuser -k 3000/tcp 8000/tcp >/dev/null 2>&1 || true
+sleep 2
 
 # setsid + nohup: fully detach so the servers survive when this lifecycle script exits.
 (cd backend && setsid nohup .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 > ../.devcontainer/logs/api.log 2>&1 < /dev/null &)
